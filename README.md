@@ -1,106 +1,60 @@
 # NHS Trust Financial Analytics
 
-End-to-end analytics portfolio using real NHS England public data.
-Covers **206 NHS Trusts and Foundation Trusts** across **3 financial years (2021/22 – 2023/24)**.
+> **The NHS sector moved from a £1.6bn surplus in 2021/22 to a £1.6bn deficit in 2023/24 — a £3.2bn swing in two years.**
+> This project builds an end-to-end analytics pipeline to surface that story from raw NHS England public data.
 
 ---
 
-## What this project demonstrates
+## What this project is
 
-| Skill | Implementation |
-|-------|---------------|
-| Data engineering | Python pipeline ingesting 6 NHS Excel files (6 × ~35MB) into MySQL |
-| Star-schema design | `dim_trust`, `dim_financial_year`, `dim_worksheet`, `dim_subcode` → `fct_tac` |
-| SQL analytics | Analytical views (I&E, expenditure, workforce, KPIs, scorecard) |
-| Data validation | 10-query integrity checks with expected-value comments |
-| Power BI | CSV export pipeline + DAX measures + 5-page dashboard spec |
-| NHS domain knowledge | TAC subcodes, FReM conventions, sector benchmarks, ODS codes |
+An end-to-end financial analytics pipeline using **real NHS England Trust Accounts Consolidation (TAC) data**, covering **206 NHS Trusts and Foundation Trusts** across **three financial years (2021/22 – 2023/24)**.
+
+It models the work of an NHS Trust finance analytics function: ingesting annual accounts data, computing sector KPIs against NHS FReM conventions, and producing board-ready outputs in Power BI.
+
+Full technical documentation: [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)
 
 ---
 
-## Key findings from the data
+## Key findings
 
 | Metric | 2021/22 | 2022/23 | 2023/24 |
 |--------|---------|---------|---------|
 | Total NHS income | £110.3bn | £118.4bn | £129.2bn |
 | Total NHS expenditure | £108.7bn | £118.2bn | £130.8bn |
-| Operating surplus / (deficit) | +£1.6bn | +£148m | **−£1.6bn** |
+| Sector operating surplus / (deficit) | **+£1.6bn** | +£148m | **−£1.6bn** |
 | Trusts in deficit | 37 of 211 | 85 of 207 | **124 of 206** |
 | Average EBITDA margin | 4.6% | 4.3% | 3.6% |
 
-The sector moved from £1.6bn surplus in 2021/22 to a £1.6bn deficit in 2023/24 — a £3.2bn swing in two years — driven by pay pressures and inflation outpacing income growth.
+**The headline:** Pay inflation following the 2023 Agenda for Change uplift, combined with clinical supply cost pressures, drove expenditure growth of 10.7% in 2023/24 against income growth of 9.1%. More than half of all NHS Trusts ended 2023/24 in deficit — the worst collective financial position since NHS provider finance reporting began in its current form.
 
 ---
 
-## Data source
+## NHS domain coverage
 
-[NHS England Trust Accounts Consolidation (TAC)](https://www.england.nhs.uk/financial-accounting-reporting-systems/nhs-england-finance-returns-publications-guidance/trust-accounts-consolidation-tac/)
+This project applies real NHS finance conventions throughout:
 
-6 files downloaded: NHS Trusts and Foundation Trusts for 2021/22, 2022/23, and 2023/24.
-
----
-
-## Project structure
-
-```
-├── agent_docs/
-│   ├── data_dictionary.md      # TAC column and subcode reference
-│   ├── kpi_definitions.md      # 7 KPI formulas with RAG thresholds
-│   └── report_calendar.md      # NHS period table and reporting cycle
-│
-├── data/
-│   ├── raw/                    # Source NHS Excel files (not committed)
-│   └── processed/
-│       └── powerbi_export/     # 8 CSV files ready for Power BI
-│
-├── python/
-│   ├── ingestion/
-│   │   └── load_tac_data.py    # Ingests all 6 TAC files → MySQL
-│   └── reporting/
-│       └── export_for_powerbi.py  # Exports MySQL views → CSVs
-│
-├── sql/
-│   ├── schema/
-│   │   └── create_tables_mysql.sql  # Full schema (staging + dims + fact + views)
-│   ├── views/
-│   │   ├── v_validation_checks.sql      # 10 data integrity checks
-│   │   └── v_trust_annual_scorecard.sql # Wide analytical view
-│   └── analysis/
-│       └── sector_trend_analysis.sql    # 10 analysis queries for presentation
-│
-└── power_bi/
-    └── setup_guide.md          # Model relationships, DAX measures, page specs
-```
+| Convention | Implementation |
+|-----------|----------------|
+| NHS Financial Reporting Manual (FReM) | IFRS-aligned chart of accounts, SoCI structure |
+| TAC worksheet mapping | TAC02 (I&E) · TAC08 (expenditure) · TAC09 (workforce) |
+| NHS period labels | M01 (April) → M12 (March); financial year not calendar year |
+| ODS organisation codes | 3-character provider codes (`org_code`) across all dimensions |
+| Agenda for Change pay context | Pay as % of income KPI; WTE cost benchmarking |
+| EBITDA margin RAG thresholds | ≥2% Green · 0–2% Amber · <0% Red (NHS England standard) |
 
 ---
 
-## Reproduce from scratch
+## Technical skills demonstrated
 
-### Prerequisites
-
-- Python 3.11+ with `pandas`, `sqlalchemy`, `pymysql`, `openpyxl`
-- MySQL 8.0+ (local)
-- NHS TAC Excel files in `data/raw/`
-
-### Steps
-
-```bash
-# 1. Create schema and seed dimensions
-# Run sql/schema/create_tables_mysql.sql in DbVisualizer or MySQL Workbench
-
-# 2. Ingest all 6 NHS files (~10 minutes total)
-python python/ingestion/load_tac_data.py
-
-# 3. Validate the load
-# Run sql/views/v_validation_checks.sql (10 queries with expected values)
-
-# 4. Export for Power BI
-python python/reporting/export_for_powerbi.py
-# Writes 8 CSVs to data/processed/powerbi_export/
-
-# 5. Power BI
-# Follow power_bi/setup_guide.md
-```
+| Skill | Implementation |
+|-------|---------------|
+| Data engineering | Python pipeline ingesting 6 NHS Excel TAC files (~170MB) into MySQL |
+| Dimensional modelling | Star schema: `dim_trust` · `dim_financial_year` · `dim_worksheet` · `dim_subcode` → `fct_tac` (2.18M rows) |
+| SQL analytics | Analytical views for I&E, expenditure, workforce, KPIs, and sector scorecard |
+| Data quality | 10-query validation suite with expected-value assertions |
+| Financial KPIs | EBITDA margin · Pay % of income · Cost per WTE · Budget variance · CIP achievement |
+| Power BI | 8-CSV export pipeline · DAX measures · 5-page dashboard |
+| NHS domain knowledge | TAC subcode taxonomy · FReM conventions · sector benchmarks · ICB hierarchy |
 
 ---
 
@@ -108,39 +62,110 @@ python python/reporting/export_for_powerbi.py
 
 Two MySQL databases:
 
-- **`nhs_stg`** — staging layer (`stg_tac_raw`, `stg_provider_list`)
-- **`nhs_finance`** — analytics layer:
+**`nhs_stg`** — staging layer
+
+| Table | Description |
+|-------|-------------|
+| `stg_tac_raw` | Raw ingest from all 6 TAC Excel files |
+| `stg_provider_list` | ODS provider reference |
+
+**`nhs_finance`** — analytics layer
 
 | Table / View | Rows | Description |
 |---|---|---|
-| `dim_trust` | 215 | Provider master with ODS codes, sector, region |
-| `fct_tac` | 2,179,740 | Raw fact: one row per org / year / subcode |
-| `v_income_expenditure` | 624 | I&E per trust per year (from TAC02 SoCI) |
-| `v_expenditure_breakdown` | 624 | Pay / non-pay / drugs split (from TAC08) |
-| `v_workforce` | 624 | Staff costs and WTE (from TAC09) |
-| `v_kpis` | 624 | Computed KPIs: EBITDA margin, pay %, cost per WTE |
-| `v_trust_annual_scorecard` | 624 | Wide view combining all metrics + RAG flags |
+| `dim_trust` | 215 | Provider master — ODS code, sector, region, trust type |
+| `fct_tac` | 2,179,740 | Fact table: one row per org / year / subcode / data type |
+| `v_income_expenditure` | 624 | I&E per trust per year (SoCI — TAC02) |
+| `v_expenditure_breakdown` | 624 | Pay / non-pay / drugs / depreciation split (TAC08) |
+| `v_workforce` | 624 | Staff costs and WTE (TAC09) |
+| `v_kpis` | 624 | Computed KPIs with RAG status |
+| `v_trust_annual_scorecard` | 624 | Wide view combining all metrics |
 
 ---
 
-## Power BI outputs (8 CSVs)
+## Project structure
 
-| File | Rows | Use |
-|------|------|-----|
-| `dim_trust.csv` | 215 | Slicer: sector, region, trust type |
-| `dim_financial_year.csv` | 5 | Slicer: year |
-| `kpis.csv` | 624 | KPI cards, scatter plots |
-| `ie_summary.csv` | 624 | Waterfall, trend lines |
+```
+├── agent_docs/
+│   ├── data_dictionary.md        # TAC subcode and column reference
+│   ├── kpi_definitions.md        # KPI formulas, RAG thresholds, FReM alignment
+│   └── report_calendar.md        # NHS period table and reporting cycle
+│
+├── data/
+│   ├── raw/                      # NHS TAC Excel source files (not committed — ~170MB)
+│   └── processed/
+│       └── powerbi_export/       # 8 CSVs ready for Power BI
+│
+├── python/
+│   ├── ingestion/
+│   │   └── load_tac_data.py      # Ingests all 6 TAC files into MySQL
+│   └── reporting/
+│       └── export_for_powerbi.py # Exports MySQL views to CSV
+│
+├── sql/
+│   ├── schema/
+│   │   └── create_tables_mysql.sql       # Full schema DDL
+│   ├── views/
+│   │   ├── v_validation_checks.sql       # 10 data integrity checks
+│   │   └── v_trust_annual_scorecard.sql  # Wide analytical scorecard
+│   └── analysis/
+│       └── sector_trend_analysis.sql     # Sector-level trend queries
+│
+└── power_bi/
+    └── setup_guide.md            # Model relationships, DAX measures, page specs
+```
+
+---
+
+## Power BI outputs
+
+| File | Rows | Purpose |
+|------|------|---------|
+| `dim_trust.csv` | 215 | Trust slicer — sector, region, trust type |
+| `dim_financial_year.csv` | 5 | Year slicer |
+| `kpis.csv` | 624 | KPI scorecards and scatter plots |
+| `ie_summary.csv` | 624 | I&E waterfall and trend lines |
 | `expenditure_breakdown.csv` | 624 | Pay vs non-pay breakdown |
-| `workforce.csv` | 624 | WTE and staff cost cards |
-| `income_detail.csv` | 9,144 | Income drilldown by line item |
-| `expenditure_detail.csv` | 11,856 | Cost drilldown by line item |
-| `sector_benchmarks.csv` | 30 | Aggregated sector summary |
+| `workforce.csv` | 624 | WTE and staff cost analysis |
+| `income_detail.csv` | 9,144 | Income drilldown by TAC line item |
+| `expenditure_detail.csv` | 11,856 | Cost drilldown by TAC line item |
+| `sector_benchmarks.csv` | 30 | Aggregated sector benchmarks |
 
 ---
 
-## Known data notes
+## Reproduce from scratch
 
-- WTE staff-group breakdown (nursing, medical etc.) has subcode ambiguity in the TAC format; total WTE (`STA0410`) is reliable
-- 2021/22 files use `Organisation Name` (with space) and `Value number` columns — handled in the pipeline
-- Each annual file contains Prior Year (PY) rows; the pipeline keeps Current Year (CY) only to avoid double-counting
+**Prerequisites:** Python 3.11+ · MySQL 8.0+ · NHS TAC Excel files in `data/raw/`
+
+```bash
+# 1. Create schema and seed dimensions
+#    Run sql/schema/create_tables_mysql.sql in MySQL Workbench or DbVisualizer
+
+# 2. Ingest all 6 NHS TAC files (~10 minutes)
+python python/ingestion/load_tac_data.py
+
+# 3. Validate the load
+#    Run sql/views/v_validation_checks.sql — 10 queries with expected values
+
+# 4. Export for Power BI
+python python/reporting/export_for_powerbi.py
+#    Writes 8 CSVs to data/processed/powerbi_export/
+
+# 5. Build the dashboard
+#    Follow power_bi/setup_guide.md
+```
+
+**Python dependencies:** `pandas` · `sqlalchemy` · `pymysql` · `openpyxl`
+
+---
+
+## Data notes
+
+- Source: [NHS England TAC publications](https://www.england.nhs.uk/financial-accounting-reporting-systems/nhs-england-finance-returns-publications-guidance/trust-accounts-consolidation-tac/) — publicly available, updated annually
+- Each annual file includes Prior Year (PY) rows; the pipeline retains Current Year (CY) only to prevent double-counting
+- Total WTE (`STA0410`) is the reliable workforce metric; WTE by staff group has subcode ambiguity in the TAC format
+- 2021/22 source files use slightly different column naming (`Organisation Name` with space; `Value number`) — handled in the ingestion layer
+
+---
+
+*For full technical documentation, NHS background, data model detail, and analytical narrative: [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md)*
